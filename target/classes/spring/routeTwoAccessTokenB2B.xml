@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+        <routeContext id="access_tokenb2b" xmlns="http://camel.apache.org/schema/spring">
+            <route id="bs2_route2" shutdownRoute="Default">
+                <from id="bs2_from1" uri="direct:bs_5"/>
+                <log id="bs2_log1" message="Hello World bs2 at ${date:now}  and Body : ${body}"/>
+                <setProperty id="bs2_setProperty1" propertyName="timestamp">
+                    <simple resultType="java.lang.Long">
+                        ${date:now}
+                    </simple>
+                </setProperty>
+                <!--      		Checkpoint request accepted -->
+                <setProperty id="bs2_setProperty2" propertyName="bodyOri">
+                    <simple>${body}</simple>
+                </setProperty>
+                <setProperty id="bs2status_setProperty1" propertyName="status">
+                    <constant>1</constant>
+                </setProperty>
+                <process id="bs2_process1" ref="killRoute"/>
+                <to id="bs2_to1" uri="direct:genID"/>
+                <marshal id="bs2_marshal1" ref="jackson"/>
+                <wireTap id="bs2_wireTap1" uri="direct:gen_log"/>
+                <!--        		Checkpoint request payload ready to send to backend -->
+                <setProperty id="bs2status_setProperty2" propertyName="status">
+                    <constant>2</constant>
+                </setProperty>
+                <wireTap id="bs2_wireTap2" uri="direct:gen_log"/>
+                <log id="bs2_log2" message=">>>> Request Body to Backend: \n${body}"/>
+                <removeHeaders id="bs2_removeHeaders1" pattern="Camel*"/>
+                <setHeader headerName="CamelHttpMethod" id="bs2_setHeader1">
+                    <constant>POST</constant>
+                </setHeader>
+                <setHeader headerName="CamelHttpPath" id="bs2_setHeader2">
+                    <simple>{{service.b2b.url}}</simple>
+                </setHeader>
+                <setHeader headerName="Content-Type" id="bs2_setHeader3">
+                    <constant>application/json</constant>
+                </setHeader>
+                <to id="bs2_to2" uri="https4://{{bs.env}}?bridgeEndpoint=true&amp;connectionClose=true&amp;throwExceptionOnFailure=false"/>
+                <!-- 			Checkpoint response received -->
+                <setProperty id="bs2status_setProperty3" propertyName="status">
+                    <constant>3</constant>
+                </setProperty>
+                <wireTap id="bs2_wireTap3" uri="direct:gen_log"/>
+                <log id="bs2_log3" message=">>>> Response Body to Backend: \n${body}"/>
+                <to id="bs2_to2" uri="direct:valResponse"/>
+                <log id="bs2_log4" message=">>>> ExchangeProperty to Backend: \n${exchangeProperty.isSuccess}"/>
+                <choice id="bs2_choice1">
+                    <when id="bs2_when1">
+                        <simple>${exchangeProperty.isSuccess} == "1"</simple>
+                        <unmarshal id="bs2_unmarshal1" ref="jackson"/>
+                    </when>
+                    <otherwise id="bs2_otherwise1">
+                        <log id="bs2_log3" message=">>>> Response Error: \n${body}"/>
+                    </otherwise>
+                </choice>
+            </route>
+        </routeContext>
+</beans>
