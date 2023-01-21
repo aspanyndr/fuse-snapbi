@@ -9,7 +9,7 @@ import com.fusetest.testing.pojo.AdditionalInfo;
 import org.hibernate.validator.constraints.Length;
 
 
-public class B2BAccessToken implements Serializable  {
+public class B2BAccessTokenDTO implements Serializable  {
 
     /**
      *

@@ -14,11 +14,17 @@
             <property name="password" value="${postgre.password}"/>
         </bean>
         <!-- import routeBS.xml-->
-    <import resource="routeOneSignatureAuth.xml"/>
-    <import resource="routeTwoAccessTokenB2B.xml"/>
+    <import resource="routeSignatureAuth.xml"/>
+    <import resource="routeAccessTokenB2B.xml"/>
+    <import resource="routeAccessTokenB2B2C.xml"/>
+    <import resource="routeSignatureService.xml"/>
+    <import resource="routeCardBindLimit.xml"/>
         <camelContext id="camel" streamCache="true" xmlns="http://camel.apache.org/schema/spring">
-            <routeContextRef ref="signature_auth"/>
-            <routeContextRef ref="access_tokenb2b"/>
+            <routeContextRef ref="signatureAuth"/>
+            <routeContextRef ref="accessTokenb2b"/>
+            <routeContextRef ref="accessTokenB2B2C"/>
+            <routeContextRef ref="signatureService"/>
+            <routeContextRef ref="cardBindLimit"/>
             <dataFormats>
                 <json allowJmsType="false" allowUnmarshallType="false" contentTypeHeader="false" enableJaxbAnnotationModule="false" id="jackson" library="Jackson" prettyPrint="false" useDefaultObjectMapper="true" useList="false"/>
             </dataFormats>
@@ -123,7 +129,7 @@
                 <post bindingMode="json" consumes="application/json"
                       id="441e1458-b595-454a-a091-67358d47ad01"
                       produces="application/json"
-                      type="com.fusetest.testing.dto.B2BAccessToken" uri="/access-token/b2b">
+                      type="com.fusetest.testing.dto.B2BAccessTokenDTO" uri="/access-token/b2b">
                     <route>
                         <to uri="bean-validator:access-token/b2b"/>
                         <setProperty propertyName="grantType">
@@ -140,6 +146,108 @@
                                 </setHeader>
                                 <convertBodyTo id="_convertBodyTo5" type="java.lang.String"/>
                                 <setBody id="co_setBody5">
+                                    <simple>{
+                                        "code": 500,
+                                        "message": "Internal Server Error ",
+                                        "result": "Failed"
+                                        }</simple>
+                                </setBody>
+                            </doCatch>
+                        </doTry>
+                        <onException>
+                            <exception>com.fasterxml.jackson.core.JsonParseException</exception>
+                            <exception>com.fasterxml.jackson.databind.JsonMappingException</exception>
+                            <exception>com.fasterxml.jackson.databind.exc.InvalidFormatException</exception>
+                            <exception>org.apache.camel.component.bean.validator.BeanValidationException</exception>
+                            <exception>org.springframework.beans.factory.support.BeanDefinitionValidationException</exception>
+                            <handled>
+                                <constant>true</constant>
+                            </handled>
+                            <transform>
+                                <simple>{
+                                    "code": 422,
+                                    "message": "Failure when parsing input. \n${exchangeProperty.CamelExceptionCaught.getMessage}",
+                                    "result": "Failed"
+                                    }
+                                </simple>
+                            </transform>
+                            <setHeader headerName="CamelHttpResponseCode">
+                                <constant>422</constant>
+                            </setHeader>
+                        </onException>
+                    </route>
+                </post>
+                <post bindingMode="json" consumes="application/json"
+                      id="441e1458-b595-454a-a091-67358d47ad011"
+                      produces="application/json"
+                      type="com.fusetest.testing.dto.B2B2CAccessTokenDTO" uri="/access-token/b2b2c">
+                    <route>
+                        <to uri="bean-validator:access-token/b2b2c"/>
+                        <setProperty propertyName="grantType">
+                            <simple>${body.grantType}</simple>
+                        </setProperty>
+                        <doTry id="_doTry6">
+                            <to uri="direct:bs_6"/>
+                            <doCatch id="_doCatch6">
+                                <exception>java.io.IOException</exception>
+                                <log id="co_log6" message="Error Message : ${exception.message}, Body : ${body}"/>
+                                <setHeader
+                                        headerName="Exchange.HTTP_RESPONSE_CODE" id="co_setHeader6">
+                                    <constant>500</constant>
+                                </setHeader>
+                                <convertBodyTo id="_convertBodyTo6" type="java.lang.String"/>
+                                <setBody id="co_setBody6">
+                                    <simple>{
+                                        "code": 500,
+                                        "message": "Internal Server Error ",
+                                        "result": "Failed"
+                                        }</simple>
+                                </setBody>
+                            </doCatch>
+                        </doTry>
+                        <onException>
+                            <exception>com.fasterxml.jackson.core.JsonParseException</exception>
+                            <exception>com.fasterxml.jackson.databind.JsonMappingException</exception>
+                            <exception>com.fasterxml.jackson.databind.exc.InvalidFormatException</exception>
+                            <exception>org.apache.camel.component.bean.validator.BeanValidationException</exception>
+                            <exception>org.springframework.beans.factory.support.BeanDefinitionValidationException</exception>
+                            <handled>
+                                <constant>true</constant>
+                            </handled>
+                            <transform>
+                                <simple>{
+                                    "code": 422,
+                                    "message": "Failure when parsing input. \n${exchangeProperty.CamelExceptionCaught.getMessage}",
+                                    "result": "Failed"
+                                    }
+                                </simple>
+                            </transform>
+                            <setHeader headerName="CamelHttpResponseCode">
+                                <constant>422</constant>
+                            </setHeader>
+                        </onException>
+                    </route>
+                </post>
+                <post bindingMode="json" consumes="application/json"
+                      id="fbf31b4d-7c94-478d-9614-c8d3815f1f0b"
+                      produces="application/json"
+                      type="com.fusetest.testing.dto.CardBindLimitDTO" uri="/card-bind-limit">
+                    <route>
+                        <to uri="bean-validator:card-bind-limit"/>
+                        <setProperty propertyName="partnerReferenceNo">
+                            <simple>${body.partnerReferenceNo}</simple>
+                        </setProperty>
+                        <doTry id="_doTry2">
+                            <to uri="direct:bs_2"/>
+                            <doCatch id="_doCatch2">
+                                <exception>java.io.IOException</exception>
+                                <log id="co_log2" message="Error Message : ${exception.message}, Body : ${body}"/>
+                                <setHeader
+                                        headerName="Exchange.HTTP_RESPONSE_CODE" id="co_setHeader2">
+                                    <constant>500</constant>
+                                </setHeader>
+                                <convertBodyTo id="_convertBodyTo2x" type="java.lang.String"/>
+                                <setBody id="co_setBody2">
                                     <simple>{
                                         "code": 500,
                                         "message": "Internal Server Error ",
